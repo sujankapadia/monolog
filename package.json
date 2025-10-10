@@ -1,0 +1,22 @@
+{
+  "name": "monolog",
+  "version": "1.0.0",
+  "description": "Simple single-file microblogging framework",
+  "main": "dist/cli.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "generate": "node dist/cli.js"
+  },
+  "keywords": ["microblog", "markdown", "static-site"],
+  "author": "Sujan Kapadia",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "gray-matter": "^4.0.3",
+    "marked": "^11.0.0"
+  }
+}
