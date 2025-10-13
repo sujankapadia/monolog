@@ -11,6 +11,7 @@
     }
     body nav.table-of-contents ul {
       display: block;
+      padding-left: 2rem;
     }
     body nav.table-of-contents li {
       display: list-item;
@@ -18,22 +19,24 @@
   </style>
 </head>
 <body id="top">
-  <header>
-    <h1>{{SITE_TITLE}}</h1>
-  </header>
+  <div class="container">
+    <header>
+      <h1>{{SITE_TITLE}}</h1>
+    </header>
 
-  <nav class="table-of-contents">
-    <h2>Table of Contents</h2>
-    {{TABLE_OF_CONTENTS}}
-  </nav>
+    <nav class="table-of-contents">
+      <h2>Table of Contents</h2>
+      {{TABLE_OF_CONTENTS}}
+    </nav>
 
-  <main>
-    {{POSTS}}
-  </main>
+    <main>
+      {{POSTS}}
+    </main>
 
-  <footer>
-    <p><a href="#top">Back to top</a></p>
-    <p>&copy; {{YEAR}} {{AUTHOR}}</p>
-  </footer>
+    <footer>
+      <p><a href="#top">Back to top</a></p>
+      <p>&copy; {{YEAR}} {{AUTHOR}}</p>
+    </footer>
+  </div>
 </body>
 </html>
