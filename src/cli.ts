@@ -1,26 +1,166 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { resolve, dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { parseFile } from './parser.js';
 import { markdownToHtml } from './markdown.js';
 import { generatePage } from './generator.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
 interface Config {
-  sourceFile: string;
-  outputFile: string;
-  templateFile: string;
+  input: string;
+  output: string;
+  template: string;
+}
+
+function getDefaultTemplatePath(): string {
+  // Template is at ../templates/default.html relative to dist/cli.js
+  return join(__dirname, '..', 'templates', 'default.html');
+}
+
+function printHelp(): void {
+  console.log(`
+monolog - Single-file microblogging framework
+
+Usage: monolog [options]
+
+Options:
+  -i, --input <file>     Input markdown file (default: posts.md)
+  -o, --output <file>    Output HTML file (default: index.html)
+  -t, --template <file>  Custom template file (default: bundled template)
+  -c, --config <file>    Config file path (JSON with input, output, template fields)
+  -h, --help             Show this help message
+
+Examples:
+  monolog                           # Use defaults (posts.md -> index.html)
+  monolog -i blog.md -o blog.html   # Specify input and output
+  monolog -c monolog.config.json    # Use config file
+  monolog -c config.json -o out.html  # Config file with flag override
+
+Config file format (JSON):
+  {
+    "input": "posts.md",
+    "output": "index.html",
+    "template": "path/to/template.html"  // optional
+  }
+`);
+}
+
+function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: string; help: boolean } {
+  const flags: Partial<Config> = {};
+  let configPath: string | undefined;
+  let help = false;
+
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    const nextArg = args[i + 1];
+
+    switch (arg) {
+      case '-h':
+      case '--help':
+        help = true;
+        break;
+      case '-i':
+      case '--input':
+        flags.input = nextArg;
+        i++;
+        break;
+      case '-o':
+      case '--output':
+        flags.output = nextArg;
+        i++;
+        break;
+      case '-t':
+      case '--template':
+        flags.template = nextArg;
+        i++;
+        break;
+      case '-c':
+      case '--config':
+        configPath = nextArg;
+        i++;
+        break;
+    }
+  }
+
+  return { flags, configPath, help };
+}
+
+function loadConfigFile(configPath: string): Partial<Config> {
+  const content = readFileSync(configPath, 'utf-8');
+  const parsed = JSON.parse(content);
+
+  const config: Partial<Config> = {};
+
+  // Map old config format (sourceFile, outputFile, templateFile) to new format
+  if (parsed.input || parsed.sourceFile) {
+    config.input = parsed.input || parsed.sourceFile;
+  }
+  if (parsed.output || parsed.outputFile) {
+    config.output = parsed.output || parsed.outputFile;
+  }
+  if (parsed.template || parsed.templateFile) {
+    config.template = parsed.template || parsed.templateFile;
+  }
+
+  return config;
+}
+
+function resolveConfig(flags: Partial<Config>, configPath?: string): Config {
+  let fileConfig: Partial<Config> = {};
+
+  // Load config file if specified
+  if (configPath) {
+    if (!existsSync(configPath)) {
+      throw new Error(`Config file not found: ${configPath}`);
+    }
+    fileConfig = loadConfigFile(configPath);
+  }
+
+  // Merge: defaults <- config file <- CLI flags
+  const config: Config = {
+    input: flags.input || fileConfig.input || 'posts.md',
+    output: flags.output || fileConfig.output || 'index.html',
+    template: flags.template || fileConfig.template || getDefaultTemplatePath(),
+  };
+
+  return config;
 }
 
 function main() {
   try {
-    // Load config
-    const configContent = readFileSync('config.json', 'utf-8');
-    const config: Config = JSON.parse(configContent);
+    const args = process.argv.slice(2);
+    const { flags, configPath, help } = parseArgs(args);
 
-    console.log('📖 Reading posts from', config.sourceFile);
+    if (help) {
+      printHelp();
+      process.exit(0);
+    }
+
+    const config = resolveConfig(flags, configPath);
+
+    // Resolve paths relative to cwd
+    const inputPath = resolve(process.cwd(), config.input);
+    const outputPath = resolve(process.cwd(), config.output);
+    const templatePath = config.template.startsWith('/')
+      ? config.template
+      : resolve(process.cwd(), config.template);
+
+    if (!existsSync(inputPath)) {
+      throw new Error(`Input file not found: ${inputPath}`);
+    }
+
+    if (!existsSync(templatePath)) {
+      throw new Error(`Template file not found: ${templatePath}`);
+    }
+
+    console.log('📖 Reading posts from', config.input);
 
     // Parse the source file
-    const { siteMetadata, posts } = parseFile(config.sourceFile);
+    const { siteMetadata, posts } = parseFile(inputPath);
 
     console.log(`✓ Found ${posts.length} post(s)`);
 
@@ -32,12 +172,15 @@ function main() {
     console.log('✓ Converted Markdown to HTML');
 
     // Generate HTML page
-    const html = generatePage(siteMetadata, posts, config.templateFile);
+    const html = generatePage(siteMetadata, posts, templatePath);
+
+    // Ensure output directory exists
+    mkdirSync(dirname(outputPath), { recursive: true });
 
     // Write output
-    writeFileSync(config.outputFile, html, 'utf-8');
+    writeFileSync(outputPath, html, 'utf-8');
 
-    console.log('✓ Generated', config.outputFile);
+    console.log('✓ Generated', config.output);
     console.log('✨ Done!');
 
   } catch (error) {

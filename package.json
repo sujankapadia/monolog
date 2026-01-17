@@ -4,6 +4,9 @@
   "description": "Simple single-file microblogging framework",
   "main": "dist/cli.js",
   "type": "module",
+  "bin": {
+    "monolog": "./dist/cli.js"
+  },
   "scripts": {
     "build": "tsc",
     "generate": "node dist/cli.js"
@@ -11,6 +14,10 @@
   "keywords": ["microblog", "markdown", "static-site"],
   "author": "Sujan Kapadia",
   "license": "MIT",
+  "files": [
+    "dist",
+    "templates"
+  ],
   "devDependencies": {
     "@types/node": "^20.0.0",
     "typescript": "^5.0.0"
