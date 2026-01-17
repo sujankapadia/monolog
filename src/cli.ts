@@ -21,6 +21,21 @@ function getDefaultTemplatePath(): string {
   return join(__dirname, '..', 'templates', 'default.html');
 }
 
+function getTemplateDocsPath(): string {
+  // Docs are at ../docs/custom-templates.md relative to dist/cli.js
+  return join(__dirname, '..', 'docs', 'custom-templates.md');
+}
+
+function printTemplateHelp(): void {
+  const docsPath = getTemplateDocsPath();
+  if (!existsSync(docsPath)) {
+    console.error('Template documentation not found.');
+    process.exit(1);
+  }
+  const content = readFileSync(docsPath, 'utf-8');
+  console.log(content);
+}
+
 function printHelp(): void {
   console.log(`
 monolog - Single-file microblogging framework
@@ -33,6 +48,7 @@ Options:
   -t, --template <file>  Custom template file (default: bundled template)
   -c, --config <file>    Config file path (JSON with input, output, template fields)
   -h, --help             Show this help message
+  --help-templates       Show documentation for creating custom templates
 
 Examples:
   monolog                           # Use defaults (posts.md -> index.html)
@@ -49,10 +65,11 @@ Config file format (JSON):
 `);
 }
 
-function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: string; help: boolean } {
+function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: string; help: boolean; helpTemplates: boolean } {
   const flags: Partial<Config> = {};
   let configPath: string | undefined;
   let help = false;
+  let helpTemplates = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -62,6 +79,9 @@ function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: strin
       case '-h':
       case '--help':
         help = true;
+        break;
+      case '--help-templates':
+        helpTemplates = true;
         break;
       case '-i':
       case '--input':
@@ -86,7 +106,7 @@ function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: strin
     }
   }
 
-  return { flags, configPath, help };
+  return { flags, configPath, help, helpTemplates };
 }
 
 function loadConfigFile(configPath: string): Partial<Config> {
@@ -133,10 +153,15 @@ function resolveConfig(flags: Partial<Config>, configPath?: string): Config {
 function main() {
   try {
     const args = process.argv.slice(2);
-    const { flags, configPath, help } = parseArgs(args);
+    const { flags, configPath, help, helpTemplates } = parseArgs(args);
 
     if (help) {
       printHelp();
+      process.exit(0);
+    }
+
+    if (helpTemplates) {
+      printTemplateHelp();
       process.exit(0);
     }
 

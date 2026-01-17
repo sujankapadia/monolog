@@ -16,7 +16,8 @@
   "license": "MIT",
   "files": [
     "dist",
-    "templates"
+    "templates",
+    "docs"
   ],
   "devDependencies": {
     "@types/node": "^20.0.0",
