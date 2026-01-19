@@ -1,7 +1,39 @@
 +++
-site_title: "Sujan's Microblog"
-author: Sujan Kapadia
+site_title: "My Microblog"
+author: Your Name
 +++
+
++++
+title: "Code Syntax Highlighting"
+date: 2025-10-11
+topic: technology
+tags: code, python
++++
+
+The bundled template includes syntax highlighting via highlight.js. Here's an example:
+
+```python
+def fibonacci(n):
+    """Generate the first n Fibonacci numbers."""
+    a, b = 0, 1
+    for _ in range(n):
+        yield a
+        a, b = b, a + b
+
+# Print the first 10 Fibonacci numbers
+for num in fibonacci(10):
+    print(num)
+```
+
+It also works with other languages like JavaScript:
+
+```javascript
+const greet = (name) => {
+  console.log(`Hello, ${name}!`);
+};
+
+greet('World');
+```
 
 +++
 title: "First Post"
