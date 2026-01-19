@@ -193,6 +193,77 @@ body nav.table-of-contents li {
 
 Use higher specificity selectors (like `body nav.class`) to override framework defaults without `!important`.
 
+## Syntax Highlighting
+
+The bundled template includes [highlight.js](https://highlightjs.org/) for automatic syntax highlighting of code blocks.
+
+### How It Works
+
+When you write a fenced code block with a language identifier:
+
+````markdown
+```python
+def hello():
+    print("Hello")
+```
+````
+
+The markdown processor outputs:
+
+```html
+<pre><code class="language-python">def hello():
+    print("Hello")
+</code></pre>
+```
+
+highlight.js detects the language class and applies syntax highlighting automatically.
+
+### Bundled Template Setup
+
+The bundled template includes these resources:
+
+```html
+<!-- In <head> -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/styles/github.min.css">
+
+<!-- Before </body> -->
+<script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+<script>hljs.highlightAll();</script>
+```
+
+### Using a Different Theme
+
+Replace the CSS file with any [highlight.js theme](https://highlightjs.org/demo):
+
+```html
+<!-- Dark theme example -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/styles/github-dark.min.css">
+
+<!-- Other popular themes -->
+<!-- styles/atom-one-dark.min.css -->
+<!-- styles/monokai.min.css -->
+<!-- styles/vs2015.min.css -->
+```
+
+### Adding to a Custom Template
+
+To add syntax highlighting to your own template:
+
+1. Add the CSS theme in `<head>`:
+   ```html
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/styles/github.min.css">
+   ```
+
+2. Add the script before `</body>`:
+   ```html
+   <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11/build/highlight.min.js"></script>
+   <script>hljs.highlightAll();</script>
+   ```
+
+### Disabling Syntax Highlighting
+
+If you don't want syntax highlighting in a custom template, simply omit the highlight.js CSS and JavaScript.
+
 ## Minimal Template Example
 
 A complete minimal template:
