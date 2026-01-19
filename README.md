@@ -1,81 +1,183 @@
 # Monolog
 
-A single-file microblogging framework that generates static HTML from Markdown with YAML front matter.
+A single-file microblogging framework that generates static HTML from Markdown.
 
 ## What is Monolog?
 
-Monolog is a minimal static site generator for microblogging. Write all your posts in one Markdown file with metadata, run the generator, and get a single-page HTML blog.
+Monolog is a minimal static site generator for microblogging. Write all your posts in one Markdown file, run the generator, and get a single-page HTML blog with syntax highlighting.
 
-## Why Monolog?
+## Features
 
-- **Single file for content**: All posts live in one Markdown file, ordered newest-first
-- **Simple workflow**: Copy-paste metadata block, write content, regenerate
-- **Semantic HTML**: Clean output ready for any CSS framework or custom styling
-- **No database**: Just files and a build command
+- **Single file for content** — All posts live in one Markdown file, ordered newest-first
+- **CLI tool** — Install globally or as a project dependency
+- **Syntax highlighting** — Code blocks highlighted via highlight.js
+- **Custom templates** — Use the bundled template or provide your own
+- **HTML sanitization** — Optional XSS protection with `--sanitize`
+- **No database** — Just files and a build command
 
-## Getting Started
+## Installation
 
-### Prerequisites
-
-- Node.js 18+
-- npm
-
-### Installation
+### Global install (for local use)
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/sujankapadia/monolog.git
 cd monolog
 npm install
 npm run build
+npm install -g .
 ```
 
-### Usage
+Then use `monolog` from any directory.
 
-1. Copy the example posts file:
+### As a project dependency (for Netlify, etc.)
+
+```bash
+npm install --save-dev github:sujankapadia/monolog
+```
+
+## Usage
+
+### Basic usage
+
+```bash
+# Using defaults (posts.md → index.html)
+monolog
+
+# Specify input and output
+monolog -i blog.md -o public/index.html
+
+# With HTML sanitization
+monolog --sanitize
+```
+
+### CLI options
+
+```
+Options:
+  -i, --input <file>     Input markdown file (default: posts.md)
+  -o, --output <file>    Output HTML file (default: index.html)
+  -t, --template <file>  Custom template file (default: bundled template)
+  -c, --config <file>    Config file path (JSON)
+  -h, --help             Show help message
+  --help-templates       Show documentation for creating custom templates
+  --sanitize             Sanitize HTML output to prevent XSS attacks
+```
+
+### Using a config file
+
+```bash
+monolog -c config.json
+```
+
+Config file format:
+```json
+{
+  "input": "posts.md",
+  "output": "index.html",
+  "template": "path/to/custom-template.html"
+}
+```
+
+CLI flags override config file values.
+
+## Writing Posts
+
+Create a `posts.md` file (see `examples/posts.md` for reference):
+
+```markdown
++++
+site_title: "My Microblog"
+author: Your Name
++++
+
++++
+title: "Latest Post"
+date: 2025-01-15
+tags: example, first
++++
+
+Your post content here with **Markdown** formatting.
+
+Code blocks get syntax highlighting:
+
+```python
+def hello():
+    print("Hello, world!")
+```
+
++++
+title: "Older Post"
+date: 2025-01-10
++++
+
+Another post...
+```
+
+### Post format
+
+- Uses `+++` delimiters for YAML front matter (not `---`, to avoid conflicts with Markdown horizontal rules)
+- First block: site metadata (`site_title`, `author`)
+- Subsequent blocks: individual posts (`title`, `date`, optional `topic`, `tags`)
+- Posts ordered newest-first by convention
+- Supports GitHub Flavored Markdown (tables, strikethrough, code blocks)
+- HTML comments (`<!-- -->`) are stripped from output
+
+## Custom Templates
+
+Use your own HTML template with the `-t` flag:
+
+```bash
+monolog -t my-template.html
+```
+
+For full documentation on creating templates:
+
+```bash
+monolog --help-templates
+```
+
+The bundled template uses [Pico CSS](https://picocss.com/) and [highlight.js](https://highlightjs.org/).
+
+## Deploying with Netlify
+
+In your blog project:
+
+1. Add monolog as a dependency:
    ```bash
-   cp examples/posts.md posts.md
+   npm install --save-dev github:sujankapadia/monolog
    ```
 
-2. Edit `posts.md` with your content:
-   ```markdown
-   +++
-   site_title: "Your Microblog"
-   author: Your Name
-   +++
-
-   +++
-   title: "Your First Post"
-   date: 2025-10-10
-   tags: example, test
-   +++
-
-   Your post content here with **Markdown** formatting.
+2. Add build script to `package.json`:
+   ```json
+   {
+     "scripts": {
+       "build": "monolog -i posts.md -o index.html"
+     }
+   }
    ```
 
-3. Generate the site:
-   ```bash
-   npm run generate
+3. Configure Netlify (`netlify.toml`):
+   ```toml
+   [build]
+     command = "npm run build"
+     publish = "."
    ```
 
-4. Open `index.html` in your browser
+## Project Structure
 
-## File Structure
-
-- `posts.md` - Your content (create from `examples/posts.md`)
-- `config.json` - Input/output file paths
-- `templates/default.html` - HTML template
-- `src/` - TypeScript source code
-- `index.html` - Generated output
-
-## How It Works
-
-The generator uses `+++` delimiters for YAML front matter blocks (instead of `---` to avoid conflicts with Markdown horizontal rules). The first block contains site metadata, subsequent blocks are individual posts.
-
-Posts support GitHub Flavored Markdown including code blocks, lists, links, images, and blockquotes. HTML comments in posts are stripped from output.
-
-## Contributing
-
-This is a personal project, but issues and suggestions are welcome.
+```
+monolog/
+├── src/                  # TypeScript source
+├── dist/                 # Compiled JavaScript (generated)
+├── templates/
+│   └── default.html      # Bundled HTML template
+├── docs/
+│   └── custom-templates.md
+├── examples/
+│   ├── posts.md          # Example posts file
+│   └── config.json       # Example config file
+└── package.json
+```
 
 ## License
 
