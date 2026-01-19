@@ -9,7 +9,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "generate": "node dist/cli.js"
+    "generate": "node dist/cli.js",
+    "prepare": "npm run build"
   },
   "keywords": ["microblog", "markdown", "static-site"],
   "author": "Sujan Kapadia",
