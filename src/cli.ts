@@ -14,6 +14,8 @@ interface Config {
   input: string;
   output: string;
   template: string;
+  sanitize: boolean;
+  permalinks: boolean;
 }
 
 function getDefaultTemplatePath(): string {
@@ -62,18 +64,18 @@ Config file format (JSON):
   {
     "input": "posts.md",
     "output": "index.html",
-    "template": "path/to/template.html"  // optional
+    "template": "path/to/template.html",
+    "sanitize": true,
+    "permalinks": true
   }
 `);
 }
 
-function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: string; help: boolean; helpTemplates: boolean; sanitize: boolean; permalinks: boolean } {
+function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: string; help: boolean; helpTemplates: boolean } {
   const flags: Partial<Config> = {};
   let configPath: string | undefined;
   let help = false;
   let helpTemplates = false;
-  let sanitize = false;
-  let permalinks = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -88,10 +90,10 @@ function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: strin
         helpTemplates = true;
         break;
       case '--sanitize':
-        sanitize = true;
+        flags.sanitize = true;
         break;
       case '--permalinks':
-        permalinks = true;
+        flags.permalinks = true;
         break;
       case '-i':
       case '--input':
@@ -116,7 +118,7 @@ function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: strin
     }
   }
 
-  return { flags, configPath, help, helpTemplates, sanitize, permalinks };
+  return { flags, configPath, help, helpTemplates };
 }
 
 function loadConfigFile(configPath: string): Partial<Config> {
@@ -135,6 +137,12 @@ function loadConfigFile(configPath: string): Partial<Config> {
   if (parsed.template || parsed.templateFile) {
     config.template = parsed.template || parsed.templateFile;
   }
+  if (typeof parsed.sanitize === 'boolean') {
+    config.sanitize = parsed.sanitize;
+  }
+  if (typeof parsed.permalinks === 'boolean') {
+    config.permalinks = parsed.permalinks;
+  }
 
   return config;
 }
@@ -151,10 +159,13 @@ function resolveConfig(flags: Partial<Config>, configPath?: string): Config {
   }
 
   // Merge: defaults <- config file <- CLI flags
+  // For booleans: CLI flag (if true) overrides config file, which overrides default (false)
   const config: Config = {
     input: flags.input || fileConfig.input || 'posts.md',
     output: flags.output || fileConfig.output || 'index.html',
     template: flags.template || fileConfig.template || getDefaultTemplatePath(),
+    sanitize: flags.sanitize || fileConfig.sanitize || false,
+    permalinks: flags.permalinks || fileConfig.permalinks || false,
   };
 
   return config;
@@ -163,7 +174,7 @@ function resolveConfig(flags: Partial<Config>, configPath?: string): Config {
 function main() {
   try {
     const args = process.argv.slice(2);
-    const { flags, configPath, help, helpTemplates, sanitize, permalinks } = parseArgs(args);
+    const { flags, configPath, help, helpTemplates } = parseArgs(args);
 
     if (help) {
       printHelp();
@@ -202,32 +213,32 @@ function main() {
     // Process markdown for each post
     posts.forEach(post => {
       let html = markdownToHtml(post.content);
-      if (sanitize) {
+      if (config.sanitize) {
         html = sanitizeHtml(html);
       }
       post.html = html;
     });
 
     console.log('✓ Converted Markdown to HTML');
-    if (sanitize) {
+    if (config.sanitize) {
       console.log('✓ Sanitized HTML output');
     }
 
     // Check for permalink placeholder warnings
-    if (permalinks) {
+    if (config.permalinks) {
       const templateContent = readFileSync(templatePath, 'utf-8');
       if (!templateContent.includes('{{PERMALINK_STYLES}}')) {
-        console.warn('⚠ Warning: --permalinks enabled but template missing {{PERMALINK_STYLES}} placeholder');
+        console.warn('⚠ Warning: permalinks enabled but template missing {{PERMALINK_STYLES}} placeholder');
       }
       if (!templateContent.includes('{{PERMALINK_SCRIPTS}}')) {
-        console.warn('⚠ Warning: --permalinks enabled but template missing {{PERMALINK_SCRIPTS}} placeholder');
+        console.warn('⚠ Warning: permalinks enabled but template missing {{PERMALINK_SCRIPTS}} placeholder');
       }
     }
 
     // Generate HTML page
-    const html = generatePage(siteMetadata, posts, templatePath, { permalinks });
+    const html = generatePage(siteMetadata, posts, templatePath, { permalinks: config.permalinks });
 
-    if (permalinks) {
+    if (config.permalinks) {
       console.log('✓ Added permalinks to posts');
     }
 

@@ -79,11 +79,13 @@ Config file format:
 {
   "input": "posts.md",
   "output": "index.html",
-  "template": "path/to/custom-template.html"
+  "template": "path/to/custom-template.html",
+  "sanitize": true,
+  "permalinks": true
 }
 ```
 
-CLI flags override config file values.
+All fields are optional. CLI flags override config file values.
 
 ## Writing Posts
 
