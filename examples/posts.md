@@ -4,6 +4,34 @@ author: Your Name
 +++
 
 +++
+title: "Testing HTML Sanitization"
+date: 2025-10-12
+topic: security
+tags: xss, sanitization
++++
+
+This post demonstrates the `--sanitize` flag. The following malicious HTML will be removed or neutralized when you run `monolog --sanitize`:
+
+**Script tag (will be removed):**
+<script>alert('XSS attack!');</script>
+
+**Event handler (will be removed):**
+<img src="x" onerror="alert('XSS via onerror')">
+
+**JavaScript URL (will be neutralized):**
+<a href="javascript:alert('XSS via href')">Click me</a>
+
+**Safe HTML (will be preserved):**
+<strong>This bold text</strong> and <em>this italic text</em> are safe and will remain.
+
+Run without sanitization to see the raw HTML, or with `--sanitize` to see it cleaned:
+
+```bash
+monolog -i examples/posts.md -o output.html           # Raw HTML preserved
+monolog -i examples/posts.md -o output.html --sanitize # Malicious HTML removed
+```
+
++++
 title: "Code Syntax Highlighting"
 date: 2025-10-11
 topic: technology

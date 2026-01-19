@@ -303,6 +303,42 @@ A complete minimal template:
 </html>
 ```
 
+## HTML Sanitization
+
+Markdown allows raw HTML, which could include malicious scripts if content comes from untrusted sources. Monolog provides an optional `--sanitize` flag that uses [DOMPurify](https://github.com/cure53/DOMPurify) to remove potentially dangerous HTML.
+
+### Usage
+
+```bash
+monolog --sanitize
+monolog -i posts.md -o index.html --sanitize
+```
+
+### What Gets Sanitized
+
+DOMPurify removes or neutralizes:
+- `<script>` tags
+- Event handlers (`onclick`, `onerror`, etc.)
+- `javascript:` URLs
+- Other XSS vectors
+
+Safe HTML like `<p>`, `<a href="...">`, `<img src="...">`, etc. is preserved.
+
+### When to Use It
+
+- **Single author (you write all posts)** — Generally not needed; you control the input
+- **Multiple trusted authors** — Optional; adds a safety layer
+- **Untrusted user input** — Required; always sanitize untrusted content
+
+### Caveats
+
+Sanitization may remove legitimate HTML you want to keep:
+- `<iframe>` embeds (YouTube, Vimeo, etc.)
+- Custom `<style>` blocks
+- `<script>` tags for widgets
+
+If you need these, either don't use `--sanitize` or configure DOMPurify in the source code to allow specific elements.
+
 ## Limitations
 
 The template system has the following constraints:

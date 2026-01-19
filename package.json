@@ -12,7 +12,11 @@
     "generate": "node dist/cli.js",
     "prepare": "npm run build"
   },
-  "keywords": ["microblog", "markdown", "static-site"],
+  "keywords": [
+    "microblog",
+    "markdown",
+    "static-site"
+  ],
   "author": "Sujan Kapadia",
   "license": "MIT",
   "files": [
@@ -26,6 +30,7 @@
   },
   "dependencies": {
     "gray-matter": "^4.0.3",
+    "isomorphic-dompurify": "^2.35.0",
     "marked": "^11.0.0"
   }
 }

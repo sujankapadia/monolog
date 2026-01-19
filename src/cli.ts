@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { resolve, dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { parseFile } from './parser.js';
-import { markdownToHtml } from './markdown.js';
+import { markdownToHtml, sanitizeHtml } from './markdown.js';
 import { generatePage } from './generator.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -49,6 +49,7 @@ Options:
   -c, --config <file>    Config file path (JSON with input, output, template fields)
   -h, --help             Show this help message
   --help-templates       Show documentation for creating custom templates
+  --sanitize             Sanitize HTML output to prevent XSS attacks
 
 Examples:
   monolog                           # Use defaults (posts.md -> index.html)
@@ -65,11 +66,12 @@ Config file format (JSON):
 `);
 }
 
-function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: string; help: boolean; helpTemplates: boolean } {
+function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: string; help: boolean; helpTemplates: boolean; sanitize: boolean } {
   const flags: Partial<Config> = {};
   let configPath: string | undefined;
   let help = false;
   let helpTemplates = false;
+  let sanitize = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -82,6 +84,9 @@ function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: strin
         break;
       case '--help-templates':
         helpTemplates = true;
+        break;
+      case '--sanitize':
+        sanitize = true;
         break;
       case '-i':
       case '--input':
@@ -106,7 +111,7 @@ function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: strin
     }
   }
 
-  return { flags, configPath, help, helpTemplates };
+  return { flags, configPath, help, helpTemplates, sanitize };
 }
 
 function loadConfigFile(configPath: string): Partial<Config> {
@@ -153,7 +158,7 @@ function resolveConfig(flags: Partial<Config>, configPath?: string): Config {
 function main() {
   try {
     const args = process.argv.slice(2);
-    const { flags, configPath, help, helpTemplates } = parseArgs(args);
+    const { flags, configPath, help, helpTemplates, sanitize } = parseArgs(args);
 
     if (help) {
       printHelp();
@@ -191,10 +196,17 @@ function main() {
 
     // Process markdown for each post
     posts.forEach(post => {
-      post.html = markdownToHtml(post.content);
+      let html = markdownToHtml(post.content);
+      if (sanitize) {
+        html = sanitizeHtml(html);
+      }
+      post.html = html;
     });
 
     console.log('✓ Converted Markdown to HTML');
+    if (sanitize) {
+      console.log('✓ Sanitized HTML output');
+    }
 
     // Generate HTML page
     const html = generatePage(siteMetadata, posts, templatePath);
