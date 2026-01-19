@@ -1,0 +1,5 @@
+{
+  "input": "posts.md",
+  "output": "index.html",
+  "template": "path/to/custom-template.html"
+}
