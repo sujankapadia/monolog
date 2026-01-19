@@ -12,6 +12,7 @@ Monolog is a minimal static site generator for microblogging. Write all your pos
 - **CLI tool** — Install globally or as a project dependency
 - **Syntax highlighting** — Code blocks highlighted via highlight.js
 - **Custom templates** — Use the bundled template or provide your own
+- **Permalinks** — Optional hover-to-reveal links with click-to-copy
 - **HTML sanitization** — Optional XSS protection with `--sanitize`
 - **No database** — Just files and a build command
 
@@ -48,6 +49,9 @@ monolog -i blog.md -o public/index.html
 
 # With HTML sanitization
 monolog --sanitize
+
+# With permalinks (hover to reveal, click to copy URL)
+monolog --permalinks
 ```
 
 ### CLI options
@@ -61,6 +65,7 @@ Options:
   -h, --help             Show help message
   --help-templates       Show documentation for creating custom templates
   --sanitize             Sanitize HTML output to prevent XSS attacks
+  --permalinks           Add hover-to-reveal permalink to each post (click to copy URL)
 ```
 
 ### Using a config file

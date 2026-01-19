@@ -39,8 +39,10 @@ Templates use `{{PLACEHOLDER}}` syntax. The generator performs simple string rep
 | `{{TABLE_OF_CONTENTS}}` | Navigation links to all posts | Generated HTML (see below) |
 | `{{POSTS}}` | All post content | Generated HTML (see below) |
 | `{{YEAR}}` | Current year | Generated at build time (e.g., `2026`) |
+| `{{PERMALINK_STYLES}}` | CSS for permalinks (if `--permalinks` enabled) | Generated CSS (see Permalinks section) |
+| `{{PERMALINK_SCRIPTS}}` | JavaScript for permalinks (if `--permalinks` enabled) | Generated JS (see Permalinks section) |
 
-All placeholders are replaced globally (all occurrences).
+All placeholders are replaced globally (all occurrences). The permalink placeholders are empty strings when `--permalinks` is not used.
 
 ## Generated HTML Structure
 
@@ -263,6 +265,144 @@ To add syntax highlighting to your own template:
 ### Disabling Syntax Highlighting
 
 If you don't want syntax highlighting in a custom template, simply omit the highlight.js CSS and JavaScript.
+
+## Permalinks
+
+Permalinks allow readers to link directly to a specific post. When enabled with `--permalinks`, a clickable `#` icon appears when hovering over a post title. Clicking it copies the permalink URL to the clipboard.
+
+### Enabling Permalinks
+
+```bash
+monolog --permalinks
+monolog -i posts.md -o index.html --permalinks
+```
+
+### How It Works
+
+When `--permalinks` is enabled:
+1. Each post gets a permalink `<a>` element before its title
+2. `{{PERMALINK_STYLES}}` is populated with CSS for hover/focus behavior
+3. `{{PERMALINK_SCRIPTS}}` is populated with JavaScript for copy-to-clipboard
+
+When `--permalinks` is disabled, these placeholders become empty strings.
+
+### Template Requirements
+
+To support permalinks in a custom template, add both placeholders:
+
+```html
+<head>
+  <!-- other head content -->
+  {{PERMALINK_STYLES}}
+</head>
+<body>
+  <!-- content -->
+  {{PERMALINK_SCRIPTS}}
+</body>
+```
+
+If you use `--permalinks` without these placeholders, you'll see a warning:
+```
+⚠ Warning: --permalinks enabled but template missing {{PERMALINK_STYLES}} placeholder
+```
+
+### Generated Post HTML
+
+With permalinks enabled, each post's `<h2>` includes a permalink anchor:
+
+```html
+<article id="2025-01-15-my-post">
+  <header>
+    <h2><a href="#2025-01-15-my-post" class="permalink" aria-label="Permalink to My Post"></a>My Post</h2>
+    ...
+  </header>
+</article>
+```
+
+### Customizing the Permalink Icon
+
+The default icon is `#`, defined via CSS `::before`. To customize it, add CSS after `{{PERMALINK_STYLES}}`:
+
+```html
+{{PERMALINK_STYLES}}
+<style>
+  /* Use a link emoji instead */
+  .permalink::before {
+    content: "🔗";
+  }
+
+  /* Or use an SVG */
+  .permalink::before {
+    content: url('data:image/svg+xml,<svg>...</svg>');
+  }
+</style>
+```
+
+### Default CSS
+
+The generated `{{PERMALINK_STYLES}}` includes:
+
+```css
+/* Permalink hover behavior - positioned in left margin like GitHub */
+article h2 {
+  position: relative;
+}
+article h2 .permalink {
+  position: absolute;
+  left: -1.5em;
+  opacity: 0;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+article h2 .permalink::before {
+  content: "#";
+}
+article h2:hover .permalink,
+article h2 .permalink:focus {
+  opacity: 0.6;
+}
+article h2 .permalink:hover {
+  opacity: 1;
+}
+/* Touch devices: always show permalink */
+@media (hover: none) {
+  article h2 .permalink {
+    opacity: 0.4;
+  }
+}
+/* Flash animation for copy feedback */
+@keyframes permalink-flash {
+  0% { opacity: 1; }
+  50% { opacity: 0.2; }
+  100% { opacity: 1; }
+}
+article h2 .permalink.copied {
+  animation: permalink-flash 0.3s ease-in-out;
+}
+```
+
+### Default JavaScript
+
+The generated `{{PERMALINK_SCRIPTS}}` includes:
+
+```javascript
+document.querySelectorAll('.permalink').forEach(link => {
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    const url = window.location.origin + window.location.pathname + link.getAttribute('href');
+    navigator.clipboard.writeText(url).then(() => {
+      link.classList.add('copied');
+      setTimeout(() => link.classList.remove('copied'), 300);
+    });
+  });
+});
+```
+
+### Accessibility
+
+- Links have `aria-label="Permalink to {Title}"` for screen readers
+- Links are keyboard-focusable and visible on focus
+- Touch devices show permalinks at reduced opacity (no hover required)
 
 ## Minimal Template Example
 

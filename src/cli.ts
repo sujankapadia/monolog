@@ -50,6 +50,7 @@ Options:
   -h, --help             Show this help message
   --help-templates       Show documentation for creating custom templates
   --sanitize             Sanitize HTML output to prevent XSS attacks
+  --permalinks           Add hover-to-reveal permalink to each post (click to copy URL)
 
 Examples:
   monolog                           # Use defaults (posts.md -> index.html)
@@ -66,12 +67,13 @@ Config file format (JSON):
 `);
 }
 
-function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: string; help: boolean; helpTemplates: boolean; sanitize: boolean } {
+function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: string; help: boolean; helpTemplates: boolean; sanitize: boolean; permalinks: boolean } {
   const flags: Partial<Config> = {};
   let configPath: string | undefined;
   let help = false;
   let helpTemplates = false;
   let sanitize = false;
+  let permalinks = false;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -87,6 +89,9 @@ function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: strin
         break;
       case '--sanitize':
         sanitize = true;
+        break;
+      case '--permalinks':
+        permalinks = true;
         break;
       case '-i':
       case '--input':
@@ -111,7 +116,7 @@ function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: strin
     }
   }
 
-  return { flags, configPath, help, helpTemplates, sanitize };
+  return { flags, configPath, help, helpTemplates, sanitize, permalinks };
 }
 
 function loadConfigFile(configPath: string): Partial<Config> {
@@ -158,7 +163,7 @@ function resolveConfig(flags: Partial<Config>, configPath?: string): Config {
 function main() {
   try {
     const args = process.argv.slice(2);
-    const { flags, configPath, help, helpTemplates, sanitize } = parseArgs(args);
+    const { flags, configPath, help, helpTemplates, sanitize, permalinks } = parseArgs(args);
 
     if (help) {
       printHelp();
@@ -208,8 +213,23 @@ function main() {
       console.log('✓ Sanitized HTML output');
     }
 
+    // Check for permalink placeholder warnings
+    if (permalinks) {
+      const templateContent = readFileSync(templatePath, 'utf-8');
+      if (!templateContent.includes('{{PERMALINK_STYLES}}')) {
+        console.warn('⚠ Warning: --permalinks enabled but template missing {{PERMALINK_STYLES}} placeholder');
+      }
+      if (!templateContent.includes('{{PERMALINK_SCRIPTS}}')) {
+        console.warn('⚠ Warning: --permalinks enabled but template missing {{PERMALINK_SCRIPTS}} placeholder');
+      }
+    }
+
     // Generate HTML page
-    const html = generatePage(siteMetadata, posts, templatePath);
+    const html = generatePage(siteMetadata, posts, templatePath, { permalinks });
+
+    if (permalinks) {
+      console.log('✓ Added permalinks to posts');
+    }
 
     // Ensure output directory exists
     mkdirSync(dirname(outputPath), { recursive: true });
