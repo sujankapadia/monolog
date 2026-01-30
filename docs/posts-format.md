@@ -74,7 +74,7 @@ Content is written in GitHub Flavored Markdown (GFM), which supports:
 - **Bold** (`**text**`), *italic* (`*text*`), and `inline code`
 - Headings (`## Heading`)
 - Links (`[text](url)`)
-- Images (`![alt](url)`)
+- Images (`![alt](url)`) — relative paths resolve relative to the output `index.html`, so place image files accordingly
 - Ordered and unordered lists
 - Blockquotes (`> quote`)
 - Fenced code blocks with language syntax highlighting:
