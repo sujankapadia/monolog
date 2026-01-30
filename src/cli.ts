@@ -23,15 +23,14 @@ function getDefaultTemplatePath(): string {
   return join(__dirname, '..', 'templates', 'default.html');
 }
 
-function getTemplateDocsPath(): string {
-  // Docs are at ../docs/custom-templates.md relative to dist/cli.js
-  return join(__dirname, '..', 'docs', 'custom-templates.md');
+function getDocsPath(filename: string): string {
+  return join(__dirname, '..', 'docs', filename);
 }
 
-function printTemplateHelp(): void {
-  const docsPath = getTemplateDocsPath();
+function printDocsFile(filename: string, label: string): void {
+  const docsPath = getDocsPath(filename);
   if (!existsSync(docsPath)) {
-    console.error('Template documentation not found.');
+    console.error(`${label} documentation not found.`);
     process.exit(1);
   }
   const content = readFileSync(docsPath, 'utf-8');
@@ -50,6 +49,7 @@ Options:
   -t, --template <file>  Custom template file (default: bundled template)
   -c, --config <file>    Config file path (JSON with input, output, template fields)
   -h, --help             Show this help message
+  --help-posts           Show documentation for the posts file format
   --help-templates       Show documentation for creating custom templates
   --sanitize             Sanitize HTML output to prevent XSS attacks
   --permalinks           Add hover-to-reveal permalink to each post (click to copy URL)
@@ -71,10 +71,11 @@ Config file format (JSON):
 `);
 }
 
-function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: string; help: boolean; helpTemplates: boolean } {
+function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: string; help: boolean; helpPosts: boolean; helpTemplates: boolean } {
   const flags: Partial<Config> = {};
   let configPath: string | undefined;
   let help = false;
+  let helpPosts = false;
   let helpTemplates = false;
 
   for (let i = 0; i < args.length; i++) {
@@ -85,6 +86,9 @@ function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: strin
       case '-h':
       case '--help':
         help = true;
+        break;
+      case '--help-posts':
+        helpPosts = true;
         break;
       case '--help-templates':
         helpTemplates = true;
@@ -118,7 +122,7 @@ function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: strin
     }
   }
 
-  return { flags, configPath, help, helpTemplates };
+  return { flags, configPath, help, helpPosts, helpTemplates };
 }
 
 function loadConfigFile(configPath: string): Partial<Config> {
@@ -174,15 +178,20 @@ function resolveConfig(flags: Partial<Config>, configPath?: string): Config {
 function main() {
   try {
     const args = process.argv.slice(2);
-    const { flags, configPath, help, helpTemplates } = parseArgs(args);
+    const { flags, configPath, help, helpPosts, helpTemplates } = parseArgs(args);
 
     if (help) {
       printHelp();
       process.exit(0);
     }
 
+    if (helpPosts) {
+      printDocsFile('posts-format.md', 'Posts format');
+      process.exit(0);
+    }
+
     if (helpTemplates) {
-      printTemplateHelp();
+      printDocsFile('custom-templates.md', 'Template');
       process.exit(0);
     }
 
