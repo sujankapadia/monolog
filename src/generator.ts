@@ -1,19 +1,33 @@
 import { readFileSync } from 'fs';
 import { SiteMetadata, Post } from './types.js';
 
+type PermalinkPosition = 'before' | 'after';
+
 interface GeneratorOptions {
   permalinks?: boolean;
+  permalink_position?: PermalinkPosition;
 }
 
-const PERMALINK_STYLES = `
-<style>
-  /* Permalink hover behavior - positioned in left margin like GitHub */
+function getPermalinkStyles(position: PermalinkPosition): string {
+  const positionStyles = position === 'before'
+    ? `
+  /* Positioned in left margin like GitHub */
   article h2 {
     position: relative;
   }
   article h2 .permalink {
     position: absolute;
     left: -1.5em;
+  }`
+    : `
+  /* Positioned inline after title */
+  article h2 .permalink {
+    margin-left: 0.5em;
+  }`;
+
+  return `
+<style>${positionStyles}
+  article h2 .permalink {
     opacity: 0;
     text-decoration: none;
     transition: opacity 0.2s;
@@ -44,6 +58,7 @@ const PERMALINK_STYLES = `
     animation: permalink-flash 0.3s ease-in-out;
   }
 </style>`;
+}
 
 const PERMALINK_SCRIPTS = `
 <script>
@@ -76,9 +91,14 @@ function generatePostHtml(post: Post, options: GeneratorOptions): string {
     ? `<a href="#${post.id}" class="permalink" aria-label="Permalink to ${title}"></a>`
     : '';
 
+  const position = options.permalink_position || 'before';
+  const titleHtml = position === 'before'
+    ? `${permalinkHtml}${title}`
+    : `${title}${permalinkHtml}`;
+
   return `  <article id="${post.id}">
     <header>
-      <h2>${permalinkHtml}${title}</h2>
+      <h2>${titleHtml}</h2>
       <p><time datetime="${date}">${date}</time></p>
     </header>
     <div class="post-content">
@@ -106,7 +126,7 @@ export function generatePage(
   const year = new Date().getFullYear();
 
   // Permalink placeholders: populated if enabled, empty if not
-  const permalinkStyles = options.permalinks ? PERMALINK_STYLES : '';
+  const permalinkStyles = options.permalinks ? getPermalinkStyles(options.permalink_position || 'before') : '';
   const permalinkScripts = options.permalinks ? PERMALINK_SCRIPTS : '';
 
   // Replace placeholders

@@ -10,12 +10,15 @@ import { generatePage } from './generator.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+type PermalinkPosition = 'before' | 'after';
+
 interface Config {
   input: string;
   output: string;
   template: string;
   sanitize: boolean;
   permalinks: boolean;
+  permalink_position: PermalinkPosition;
 }
 
 function getDefaultTemplatePath(): string {
@@ -53,6 +56,7 @@ Options:
   --help-templates       Show documentation for creating custom templates
   --sanitize             Sanitize HTML output to prevent XSS attacks
   --permalinks           Add hover-to-reveal permalink to each post (click to copy URL)
+  --permalink-position <before|after>  Position of permalink relative to title (default: before)
 
 Examples:
   monolog                           # Use defaults (posts.md -> index.html)
@@ -66,7 +70,8 @@ Config file format (JSON):
     "output": "index.html",
     "template": "path/to/template.html",
     "sanitize": true,
-    "permalinks": true
+    "permalinks": true,
+    "permalink_position": "before"
   }
 `);
 }
@@ -98,6 +103,14 @@ function parseArgs(args: string[]): { flags: Partial<Config>; configPath?: strin
         break;
       case '--permalinks':
         flags.permalinks = true;
+        break;
+      case '--permalink-position':
+        if (nextArg === 'before' || nextArg === 'after') {
+          flags.permalink_position = nextArg;
+        } else {
+          throw new Error(`Invalid permalink position: ${nextArg}. Must be "before" or "after".`);
+        }
+        i++;
         break;
       case '-i':
       case '--input':
@@ -147,6 +160,9 @@ function loadConfigFile(configPath: string): Partial<Config> {
   if (typeof parsed.permalinks === 'boolean') {
     config.permalinks = parsed.permalinks;
   }
+  if (parsed.permalink_position === 'before' || parsed.permalink_position === 'after') {
+    config.permalink_position = parsed.permalink_position;
+  }
 
   return config;
 }
@@ -170,6 +186,7 @@ function resolveConfig(flags: Partial<Config>, configPath?: string): Config {
     template: flags.template || fileConfig.template || getDefaultTemplatePath(),
     sanitize: flags.sanitize || fileConfig.sanitize || false,
     permalinks: flags.permalinks || fileConfig.permalinks || false,
+    permalink_position: flags.permalink_position || fileConfig.permalink_position || 'before',
   };
 
   return config;
@@ -245,7 +262,7 @@ function main() {
     }
 
     // Generate HTML page
-    const html = generatePage(siteMetadata, posts, templatePath, { permalinks: config.permalinks });
+    const html = generatePage(siteMetadata, posts, templatePath, { permalinks: config.permalinks, permalink_position: config.permalink_position });
 
     if (config.permalinks) {
       console.log('✓ Added permalinks to posts');
